@@ -11,31 +11,6 @@ typedef OAuthSignIn = void Function();
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
-/// Helper class to show a snackbar using the passed context.
-class ScaffoldSnackbar {
-  // ignore: public_member_api_docs
-  ScaffoldSnackbar(this._context);
-
-  /// The scaffold of current context.
-  factory ScaffoldSnackbar.of(BuildContext context) {
-    return ScaffoldSnackbar(context);
-  }
-
-  final BuildContext _context;
-
-  /// Helper method to show a SnackBar.
-  void show(String message) {
-    ScaffoldMessenger.of(_context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-  }
-}
-
 /// Entrypoint example for various sign-in flows with Firebase.
 class AuthGate extends StatefulWidget {
   // ignore: public_member_api_docs
@@ -66,26 +41,51 @@ class _AuthGateState extends State<AuthGate> {
     return GestureDetector(
       onTap: FocusScope.of(context).unfocus,
       child: Scaffold(
-        body: Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: isLoading
-                ? Container(
-                    color: Colors.grey[200],
-                    height: 50,
-                    width: double.infinity,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Visibility(
+              visible: error.isNotEmpty,
+              child: MaterialBanner(
+                backgroundColor: Theme.of(context).errorColor,
+                content: Text(error),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        error = '';
+                      });
+                    },
+                    child: const Text(
+                      'dismiss',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   )
-                : SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: SignInButton(
-                      Buttons.Google,
-                      onPressed: () => _handleMultiFactorException(
-                        _signInWithGoogle,
+                ],
+                contentTextStyle: const TextStyle(color: Colors.white),
+                padding: const EdgeInsets.all(10),
+              ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: isLoading
+                  ? Container(
+                      color: Colors.grey[200],
+                      height: 50,
+                      width: double.infinity,
+                    )
+                  : SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: SignInButton(
+                        Buttons.Google,
+                        onPressed: () => _handleMultiFactorException(
+                          _signInWithGoogle,
+                        ),
                       ),
                     ),
-                  ),
-          ),
+            ),
+          ],
         ),
       ),
     );
