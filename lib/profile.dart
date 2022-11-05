@@ -6,7 +6,36 @@ import 'dart:developer';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
+FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+/// Helper class to show a snackbar using the passed context.
+class ScaffoldSnackbar {
+  // ignore: public_member_api_docs
+  ScaffoldSnackbar(this._context);
+
+  /// The scaffold of current context.
+  factory ScaffoldSnackbar.of(BuildContext context) {
+    return ScaffoldSnackbar(context);
+  }
+
+  final BuildContext _context;
+
+  /// Helper method to show a SnackBar.
+  void show(String message) {
+    ScaffoldMessenger.of(_context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+  }
+}
 
 /// Displayed as a profile image if the user doesn't have one.
 const placeholderImage =
@@ -33,6 +62,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     user = FirebaseAuth.instance.currentUser!;
+
+    SchedulerBinding.instance
+        .addPostFrameCallback((_) => checkPermissions(context));
 
     FirebaseAuth.instance.userChanges().listen((event) {
       if (event != null && mounted) {
@@ -85,6 +117,25 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  Future<void> checkPermissions(BuildContext context) async {
+    final settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+      ScaffoldSnackbar(context)
+          .show("You denied permissions for notifications");
+    } else {
+      ScaffoldSnackbar(context).show("Notification permissions granted");
+    }
   }
 
   Future<String?> getPhotoURLFromUser() async {
